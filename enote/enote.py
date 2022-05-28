@@ -23,93 +23,94 @@ from dateutil import parser
 import subprocess
 import os
 
-def log_time(conf, date = ''):
-    if date == '':
-        date = dt.datetime.now().date().isoformat()
+class App():
+    def __init__(self, conf):
+        self.conf = conf
+        self.date = dt.datetime.now().date().isoformat()
+        self.timelog = conf["timelog"]
 
-    with open(conf["timelog"], 'r') as f:
-        today = json.load(f)[date]
-        start_times = today[::2]
-        end_times = today[1::2]
-        tuples = zip(start_times, end_times)
-        tuples = map(lambda t: (t[0][1:], t[1][1:]), tuples)
-        tuples = filter(lambda t: t[0] != "" and t[1] != "", tuples)
-        tuples = map(lambda t: (parser.parse(t[0]), parser.parse(t[1])), tuples)
-        diff = dt.timedelta()
-        for x in tuples:
-            diff = diff + (x[1] - x[0])
-            
-        print(diff)
+    def log_time(self, date = ''):
+        if date == '':
+            date = self.date
 
-
-def start_time(conf):
-    _write_time(conf, "S")
-
-
-def end_time(conf):
-    _write_time(conf, "E")
+        with open(self.timelog, 'r') as f:
+            today = json.load(f)[date]
+            start_times = today[::2]
+            end_times = today[1::2]
+            tuples = zip(start_times, end_times)
+            tuples = map(lambda t: (t[0][1:], t[1][1:]), tuples)
+            tuples = filter(lambda t: t[0] != "" and t[1] != "", tuples)
+            tuples = map(lambda t: (parser.parse(t[0]), parser.parse(t[1])), tuples)
+            diff = dt.timedelta()
+            for x in tuples:
+                diff = diff + (x[1] - x[0])
+                
+            print(diff)
 
 
-def _write_time(conf, t, post=""):
-    pt = "S"
-    if pt == t:
-        pt = "E"
-
-    template = t + "{}"
-    
-    if post != "":
-        template += (" " + post)
-
-    time_events_json = {}
-    with open(conf["timelog"], 'r') as f:
-        time_events_json = json.load(f)
-        now = dt.datetime.now()
-        date = now.date().isoformat()
-        time_event = template.format(now.time().isoformat(timespec='minutes'))
-        if date in time_events_json:
-            if pt not in time_events_json[date][-1]:
-                time_events_json[date].append(pt)
-            time_events_json[date].append(time_event)
-        else:
-            time_events_json[date] = [time_event]
-
-    with open(conf['timelog'], 'w') as f:
-        json.dump(time_events_json, f)
+    def start_time(self):
+        self._write_time("S")
 
 
-def _create_daily(conf):
-    now = dt.datetime.now()
-    date = now.date().isoformat()
-    with open(conf["daily"] + "/" + date + ".md", "w") as f:
-        f.write("# {}\n".format(date))
-        with open(conf["template"], "r") as t:
-            f.writelines(t.readlines())
+    def end_time(self):
+        self._write_time("E")
 
 
-def edit_daily(conf):
-    now = dt.datetime.now()
-    date = now.date().isoformat()
-    path = conf["daily"] + "/" + date + ".md"
-    if not os.path.exists(path):
-        _create_daily()
+    def _write_time(self, t, post=""):
+        pt = "S"
+        if pt == t:
+            pt = "E"
 
-    subprocess.run([conf["editor"], path])
+        template = t + "{}"
+        
+        if post != "":
+            template += (" " + post)
+
+        time_events_json = {}
+        with open(self.timelog, 'r') as f:
+            time_events_json = json.load(f)
+            now = dt.datetime.now()
+            time_event = template.format(now.time().isoformat(timespec='minutes'))
+            if self.date in time_events_json:
+                if pt not in time_events_json[self.date][-1]:
+                    time_events_json[self.date].append(pt)
+                time_events_json[self.date].append(time_event)
+            else:
+                time_events_json[self.date] = [time_event]
+
+        with open(self.timelog, 'w') as f:
+            json.dump(time_events_json, f)
 
 
-def edit_fixed(conf):
-    subprocess.run([conf["editor"], conf["fixed"]])
+    def _create_daily(self):
+        with open(self.conf["daily"] + "/" + self.date + ".md", "w") as f:
+            f.write("# {}\n".format(self.date))
+            with open(self.conf["template"], "r") as t:
+                f.writelines(t.readlines())
 
 
-def backup():
-    files_to_backup = [
-        conf["daily"],
-        conf["fixed"],
-        conf["timelog"]
-    ]
+    def edit_daily(self):
+        path = self.conf["daily"] + "/" + self.date + ".md"
+        if not os.path.exists(path):
+            self._create_daily()
 
-    subprocess.run(["git", "add"] + files_to_backup)
-    subprocess.run(["git", "commit", "-m", dt.datetime.now().isoformat()])
-    subprocess.run(["git", "push", "origin", "main"])
+        subprocess.run([self.conf["editor"], path])
+
+
+    def edit_fixed(self):
+        subprocess.run([self.conf["editor"], self.conf["fixed"]])
+
+
+    def backup(self):
+        files_to_backup = [
+            self.conf["daily"],
+            self.conf["fixed"],
+            self.timelog
+        ]
+
+        subprocess.run(["git", "add"] + files_to_backup)
+        subprocess.run(["git", "commit", "-m", dt.datetime.now().isoformat()])
+        subprocess.run(["git", "push", "origin", "main"])
     
 
 def initialize(home):
@@ -138,24 +139,21 @@ def initialize(home):
 
     os.chdir(initial_config["workingdir"])
     subprocess.run(["git", "init"])
-    
-
-
-
 
 
 def enote(command, conf):
+    app = App(conf)
     commands = {
-        "backup": backup,
-        "start": start_time,
-        "end": end_time,
-        "log": log_time,
-        "daily": edit_daily,
-        "edit": edit_fixed
+        "backup": app.backup,
+        "start": app.start_time,
+        "end": app.end_time,
+        "log": app.log_time,
+        "daily": app.edit_daily,
+        "edit": app.edit_fixed
     }
 
     if command in commands:
-        commands[command](conf)
+        commands[command]()
     else:
         print_usage()
 
