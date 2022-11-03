@@ -113,6 +113,20 @@ class App():
         subprocess.run([self.conf["editor"], self.conf["fixed"]])
 
 
+    def cat_yesterday(self, args):
+        if len(args) > 0:
+            date = args[0]
+        else:
+            date = (dt.datetime.now() - dt.timedelta(1)).date().isoformat()
+
+        path = self.conf["daily"] + "/" + date + ".md"
+        cat = subprocess.run(["cat", path], capture_output=True)
+        grep = subprocess.run(["grep", "--after-context=50", "Summary"], input=cat.stdout, capture_output=True)
+        grep = subprocess.run(["grep", "--invert-match", "Summary"], input=grep.stdout, capture_output=True)
+
+        print(grep.stdout.decode("utf-8"))
+
+
     def backup(self, args):
         files_to_backup = [
             self.conf["daily"],
@@ -162,7 +176,8 @@ def enote(command, args, conf):
         "end": app.end_time,
         "log": app.log_time,
         "daily": app.edit_daily,
-        "edit": app.edit_fixed
+        "edit": app.edit_fixed,
+        "standup": app.cat_yesterday
     }
 
     if command in commands:
