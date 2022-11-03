@@ -29,9 +29,10 @@ class App():
         self.date = dt.datetime.now().date().isoformat()
         self.timelog = conf["timelog"]
 
-    def log_time(self, date = ''):
-        if date == '':
-            date = self.date
+    def log_time(self, args):
+        date = self.date
+        if len(args) > 0:
+            date = args[0]
 
         with open(self.timelog, 'r') as f:
             today = json.load(f)[date]
@@ -48,11 +49,11 @@ class App():
             print(diff)
 
 
-    def start_time(self):
+    def start_time(self, args):
         self._write_time("S")
 
 
-    def end_time(self):
+    def end_time(self, args):
         self._write_time("E")
 
 
@@ -89,7 +90,10 @@ class App():
                 f.writelines(t.readlines())
 
 
-    def edit_daily(self):
+    def edit_daily(self, args):
+        if len(args) > 0:
+            return self._edit_prev(args[0])
+
         path = self.conf["daily"] + "/" + self.date + ".md"
         if not os.path.exists(path):
             self._create_daily()
@@ -97,11 +101,19 @@ class App():
         subprocess.run([self.conf["editor"], path])
 
 
-    def edit_fixed(self):
+    def _edit_prev(self, date):
+        path = self.conf["daily"] + "/" + date + ".md"
+        if not os.path.exists(path):
+            print("No daily note from {} exist!".format(date))
+
+        subprocess.run([self.conf["editor"], path])
+
+
+    def edit_fixed(self, args):
         subprocess.run([self.conf["editor"], self.conf["fixed"]])
 
 
-    def backup(self):
+    def backup(self, args):
         files_to_backup = [
             self.conf["daily"],
             self.conf["fixed"],
@@ -142,7 +154,7 @@ def initialize(home):
     subprocess.run(["git", "init"])
 
 
-def enote(command, conf):
+def enote(command, args, conf):
     app = App(conf)
     commands = {
         "backup": app.backup,
@@ -154,7 +166,7 @@ def enote(command, conf):
     }
 
     if command in commands:
-        commands[command]()
+        commands[command](args)
     else:
         print_usage()
 
@@ -186,7 +198,7 @@ def cli():
         print_usage()
     else:
         os.chdir(conf["workingdir"])
-        enote(sys.argv[1], conf)
+        enote(sys.argv[1], sys.argv[2:], conf)
 
 
 if __name__ == "__main__":
