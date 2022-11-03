@@ -120,8 +120,7 @@ class App():
             date = (dt.datetime.now() - dt.timedelta(1)).date().isoformat()
 
         path = self.conf["daily"] + "/" + date + ".md"
-        cat = subprocess.run(["cat", path], capture_output=True)
-        grep = subprocess.run(["grep", "--after-context=50", "Summary"], input=cat.stdout, capture_output=True)
+        grep = subprocess.run(["grep", "--after-context=50", "Summary", path], capture_output=True)
         grep = subprocess.run(["grep", "--invert-match", "Summary"], input=grep.stdout, capture_output=True)
 
         print(grep.stdout.decode("utf-8"))
