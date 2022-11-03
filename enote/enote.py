@@ -142,7 +142,7 @@ class App():
 
         subprocess.run(["git", "add"] + files_to_backup)
         subprocess.run(["git", "commit", "-m", dt.datetime.now().isoformat()])
-        subprocess.run(["git", "push", "origin", "main"])
+        # subprocess.run(["git", "push", "origin", "main"])
 
 
 def initialize(home):
@@ -197,14 +197,14 @@ def print_usage():
     usage = """usage: {} <command>
 
 commands:
-    backup -
-    start -
-    end -
-    log -
-    daily -
-    edit -
-    standup -
-    grep -
+    backup - Create a git commit with notes and timelog
+    start - Start logging time
+    end - Stop logging time
+    log - Print time worked today
+    daily - Edit notes for today
+    edit - Edit static note
+    standup - Print summary for yesterdays note
+    grep - Grep notes
     """.format(sys.argv[0])
     print(usage)
 
