@@ -44,7 +44,7 @@ class App():
             diff = dt.timedelta()
             for x in tuples:
                 diff = diff + (x[1] - x[0])
-                
+
             print(diff)
 
 
@@ -62,7 +62,7 @@ class App():
             pt = "E"
 
         template = t + "{}"
-        
+
         if post != "":
             template += (" " + post)
 
@@ -111,7 +111,7 @@ class App():
         subprocess.run(["git", "add"] + files_to_backup)
         subprocess.run(["git", "commit", "-m", dt.datetime.now().isoformat()])
         subprocess.run(["git", "push", "origin", "main"])
-    
+
 
 def initialize(home):
     initial_config = {
@@ -128,7 +128,8 @@ def initialize(home):
         json.dump(initial_config, f)
 
     with open(initial_config["workingdir"] + '/' + initial_config["timelog"], "w") as f:
-        json.dump("{}", f)
+        empty = {}
+        json.dump(empty, f)
 
     with open(initial_config["workingdir"] + '/' + initial_config["template"], "w") as f:
         template = """## ToDo
@@ -160,7 +161,7 @@ def enote(command, conf):
 
 def print_usage():
     usage = """usage: {} <command>
-            
+
 commands:
     backup -
     start -
@@ -177,7 +178,7 @@ def cli():
     if not os.path.exists(conf_path):
         print("{} not found, initializing enote".format(conf_path))
         initialize(os.path.expanduser("~/"))
-    
+
     with open(conf_path) as f:
         conf = json.load(f)
 
