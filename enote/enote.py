@@ -126,6 +126,13 @@ class App():
         print(grep.stdout.decode("utf-8"))
 
 
+    def grep(self, args):
+        dailies = [self.conf["daily"] + "/" + note for note in os.listdir(self.conf["daily"])]
+        grep = subprocess.run(["grep", *args, *dailies, self.conf["fixed"]], capture_output=True)
+
+        print(grep.stdout.decode("utf-8"))
+
+
     def backup(self, args):
         files_to_backup = [
             self.conf["daily"],
@@ -176,7 +183,8 @@ def enote(command, args, conf):
         "log": app.log_time,
         "daily": app.edit_daily,
         "edit": app.edit_fixed,
-        "standup": app.cat_yesterday
+        "standup": app.cat_yesterday,
+        "grep": app.grep
     }
 
     if command in commands:
@@ -195,6 +203,8 @@ commands:
     log -
     daily -
     edit -
+    standup -
+    grep -
     """.format(sys.argv[0])
     print(usage)
 
